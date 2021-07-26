@@ -172,7 +172,8 @@ def icwt(W, sj, dt, dj=1/12, wavelet='morlet'):
 
 
 def significance(signal, dt, scales, sigma_test=0, alpha=None,
-                 significance_level=0.95, dof=-1, wavelet='morlet'):
+                 significance_level=0.95, dof=-1, wavelet='morlet',
+                 gws=None):
     """Significance test for the one dimensional wavelet transform.
 
     Parameters
@@ -199,6 +200,10 @@ def significance(signal, dt, scales, sigma_test=0, alpha=None,
         according to the type set in sigma_test.
     wavelet : instance of Wavelet class, or string
         Mother wavelet class. Default is Morlet
+
+    gws : global wavelet spectrum, a vector of the same length as scale.
+        If input then this is used as the theoretical background spectrum,
+        rather than white or red noise.
 
     Returns
     -------
@@ -249,13 +254,18 @@ def significance(signal, dt, scales, sigma_test=0, alpha=None,
     gamma_fac = wavelet.gamma            # Time-decorrelation factor
     dj0 = wavelet.deltaj0                # Scale-decorrelation factor
 
-    # Theoretical discrete Fourier power spectrum of the noise signal
-    # following Gilman et al. (1963) and Torrence and Compo (1998),
-    # equation 16.
-    def pk(k, a, N):
-        return (1 - a ** 2) / (1 + a ** 2 - 2 * a * np.cos(2 * np.pi * k / N))
-    fft_theor = pk(freq, alpha, n0)
-    fft_theor = variance * fft_theor     # Including time-series variance
+
+    if gws is not None:
+        fft_theor = gws
+    else:
+        # Theoretical discrete Fourier power spectrum of the noise signal
+        # following Gilman et al. (1963) and Torrence and Compo (1998),
+        # equation 16.
+        def pk(k, a, N):
+            return (1 - a ** 2) / (1 + a ** 2 - 2 * a * np.cos(2 * np.pi * k / N))
+        fft_theor = pk(freq, alpha, n0)
+        fft_theor = variance * fft_theor     # Including time-series variance
+
     signif = fft_theor
 
     try:
